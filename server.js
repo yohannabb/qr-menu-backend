@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename);
 app.use(cors({
   origin: [
     "http://localhost:5173", 
-    "https://qr-menu-frontend-mauve.vercel.app" // Your exact live link!
+    "https://qr-menu-frontend-mauve.vercel.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
