@@ -18,7 +18,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- MIDDLEWARE ---
-// --- MIDDLEWARE ---
 app.use(cors({
   origin: [
     "http://localhost:5173", 
@@ -29,7 +28,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// --- CLOUDINARY CONFIGISTRATION ---
+// --- CLOUDINARY CONFIGURATION ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -40,7 +39,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'habeshas_hotel_menu', // Creates a clean folder name inside your Cloudinary account
+    folder: 'habeshas_hotel_menu', 
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
   },
 });
@@ -58,8 +57,9 @@ const menuItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   category: { type: String, required: true },
+  subcategory: { type: String, default: "General Section" }, // 🔥 FIXED: Added missing subcategory field
   desc: { type: String },
-  img: { type: String } // Will now store direct global secure https cloud URLs
+  img: { type: String } 
 }, { collection: 'MenuItem' });
 
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
@@ -83,12 +83,21 @@ app.get('/api/menu', async (req, res) => {
 // 2. POST: Create item WITH cloud file upload
 app.post('/api/menu', upload.single('image'), async (req, res) => {
   try {
-    const { name, price, category, desc } = req.body;
+    // 🔥 FIXED: Destructured subcategory from incoming body request
+    const { name, price, category, subcategory, desc } = req.body; 
     
-    // Automatically uses Cloudinary secure asset URL endpoint
     const imgPath = req.file ? req.file.path : '';
 
-    const newItem = new MenuItem({ name, price: Number(price), category, desc, img: imgPath });
+    // 🔥 FIXED: Included subcategory in new document initialization
+    const newItem = new MenuItem({ 
+      name, 
+      price: Number(price), 
+      category, 
+      subcategory: subcategory || "General Section", 
+      desc, 
+      img: imgPath 
+    });
+    
     await newItem.save();
     res.status(201).json({ message: 'Item added successfully!', item: newItem });
   } catch (error) {
@@ -99,17 +108,25 @@ app.post('/api/menu', upload.single('image'), async (req, res) => {
 // 3. PUT: Update item WITH optional new cloud file upload
 app.put('/api/menu/:id', upload.single('image'), async (req, res) => {
   try {
-    const { name, price, category, desc, img } = req.body;
-    let imgPath = img; // Keep the old image link by default
+    // 🔥 FIXED: Destructured subcategory for editing operations
+    const { name, price, category, subcategory, desc, img } = req.body; 
+    let imgPath = img; 
 
-    // If a new file is uploaded, replace it with the new Cloudinary link path
     if (req.file) {
       imgPath = req.file.path;
     }
 
+    // 🔥 FIXED: Passed subcategory to database update query execution matrix
     const updatedItem = await MenuItem.findByIdAndUpdate(
       req.params.id,
-      { name, price: Number(price), category, desc, img: imgPath },
+      { 
+        name, 
+        price: Number(price), 
+        category, 
+        subcategory, 
+        desc, 
+        img: imgPath 
+      },
       { new: true }
     );
     res.json({ message: 'Item updated successfully!', item: updatedItem });
